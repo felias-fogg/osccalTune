@@ -9,6 +9,9 @@
 // 6) When satisfied, wait 30 seconds. The OSCCAL value will then be
 //    stored in EEPROM (if STORE_TO_EEPROM is defined), either at the beginning or at the end,
 //    depending on whether the compile time switch STORE_AT_END is defined.
+// 7) In case, you want to 'erase' the calibration value in EEPROM, just press both buttons and
+//    then press reset or invoke a power-on reset. The value will then be over written with 0xFF,
+//    provided the compile time constant STORE_TO_EEPROM is defined.
 //
 // MCU         | CLOCK pin | as Arduino pin
 // ATtinyX4    | PB2       | 6
@@ -19,14 +22,17 @@
 // ATtiny1634  | PC2       | 11
 // ATmegaX8    | PB0       | 8
 
-// Version 1.0 (20.1.2021)
+// Version 1.0.0 (20.1.2021)
 //  - first running version
+// Version 1.0.1 (3.2.2021)
+//  - store at end of EEPROM
+//  - baudrate is 9600
 
-#define VERSION "1.0"
+#define VERSION "1.0.1"
 #define STORE_TO_EEPROM // store final value to EEPROM
 #define STORE_AT_END   //  store it at end of EEPROM
 #define STORE_OFFSET 2 // reserved for OSCCAL (the other two bytes are reserved for the INTREF value)
-#define BAUDRATE 2400
+#define BAUDRATE 9600
 #define WAITTIMEMS (30UL*1000UL) // wait before storing to EEPROM
 #define REPEATTIMEMS 300
 
@@ -58,12 +64,19 @@ void setup(void)
   mySerial.println(F("\r\n\nosccalTune V" VERSION "\n"));
   mySerial.print(F("Factory OSCCAL value: 0x"));
   mySerial.println(OSCCAL, HEX);
+  pinMode(MOSI, INPUT_PULLUP); // note: this is the MISO-ISP pin!
+  pinMode(SCK, INPUT_PULLUP);
+#ifdef STORE_TO_EEPROM
+  if (digitalRead(MOSI) == LOW && digitalRead(SCK) == LOW) {
+    mySerial.println(F("Erasing stored OSCCAL value in EEPROM"));
+    EEPROM.write(EE_ADDR,0xFF);
+    while (1);
+  }
+#endif
   if (osccal == 0xFF) osccal = OSCCAL;
   mySerial.print(F("Initial OSCCAL value: 0x"));
   mySerial.println(osccal,HEX);
   OSCCAL = osccal;
-  pinMode(MOSI, INPUT_PULLUP); // note: this is the MISO-ISP pin!
-  pinMode(SCK, INPUT_PULLUP);
 }
 
 void loop(void)
@@ -74,7 +87,8 @@ void loop(void)
   if (millis() - lastpress > WAITTIMEMS && OSCCAL != EEPROM.read(EE_ADDR)) {
       mySerial.print(F("Saving current value 0x"));
       mySerial.print(OSCCAL, HEX);
-      mySerial.println(F(" to EEPROM"));
+      mySerial.print(F(" to EEPROM at 0x"));
+      mySerial.println(EE_ADDR, HEX);
       EEPROM.write(EE_ADDR, OSCCAL);
   }
 #endif
