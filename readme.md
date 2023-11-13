@@ -8,4 +8,4 @@ Read the comments in the top of the sketch, which describe what to do. The basic
 
 The main point is  that you can use the value stored in EEPROM later in your particular application sketch. One important prerequisite for this is, however, that you burn the EEPROM preservation fuse! Otherwise the values stored into EEPROM will always be deleted when a new sketch is uploaded to flash memory. Instead of storing the value in EEPROM, you can, of course, write the value down and insert it as a constant in your application sketch.
 
-Note that by now, there is a much easier way to calibrate you AVR MCU: [avrCalibrate](https://github.com/felias-fogg/avrCalibrate).
+Note that by now, there is a much easier way to calibrate your AVR MCU: [avrCalibrate](https://github.com/felias-fogg/avrCalibrate).
